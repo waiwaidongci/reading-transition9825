@@ -3,5 +3,7 @@ class Role(str,Enum):
     admin='admin'; analyst='analyst'; viewer='viewer'
 class RunState(str,Enum):
     queued='queued'; running='running'; completed='completed'; failed='failed'
+class ArrivalState(str,Enum):
+    queued='queued'; running='running'; completed='completed'; failed='failed'
 class ReviewState(str,Enum):
     draft='draft'; approved='approved'

@@ -1,3 +1,8 @@
 -- SQLAlchemy metadata initializes tables idempotently.
 -- Domain tables: reading_collections, reading_sessions, transition_runs, editorial_plans.
+-- Terminal-chapter arrival study (gb-0043 extension):
+--   arrival_runs            终章到达研究任务（目标章、求解状态、完整迭代轮数、误差上界、冻结快照）
+--   arrival_editorial_plans 终章编辑衔接建议（仅引用 error_bound < 1e-6 的收敛任务，存批准快照）
 -- Unique natural keys: source.key; (record.source_id, record.reference).
+-- 表结构以 SQLAlchemy 模型（models/arrival_run.py、models/arrival_note.py）为唯一事实来源，
+-- Base.metadata.create_all 在应用与 worker 启动时幂等建表，无需手工 DDL。

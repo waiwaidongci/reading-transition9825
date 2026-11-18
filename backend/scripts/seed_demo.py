@@ -6,10 +6,12 @@ from src.models.user import User
 from src.models.source import Source
 from src.models.record import Record
 from src.models.run import Run
+from src.models.arrival_run import ArrivalRun
 from src.models import note,audit
 from src.utils.security import hash_password
 from src.utils.serialization import now
 from src.services.runs import queue
+from src.services import arrival as arrival_service
 from src.services.domain_validation import validate_record
 
 def seed_values(kind,index,batch,rng):
@@ -31,9 +33,9 @@ def seed_values(kind,index,batch,rng):
         return {'visitor':f'V{uid+1:03}','exhibit':f'E{exhibit+1:02}','rating':round(max(1,min(5,3+(1 if exhibit%3==uid%3 else -.4)+rng.gauss(0,.55))),1)}
 
 def counts(db):
-    return {cls.__tablename__:db.scalar(select(func.count()).select_from(cls)) for cls in (User,Source,Record,Run)}
+    return {cls.__tablename__:db.scalar(select(func.count()).select_from(cls)) for cls in (User,Source,Record,Run,ArrivalRun)}
 def seed():
-    Base.metadata.create_all(engine);rng=random.Random(42);queued=[]
+    Base.metadata.create_all(engine);rng=random.Random(42);queued=[];arrival_queued=[]
     with Session() as db:
         for role in ('admin','analyst','viewer'):
             email=role+'@'+CONFIG['slug']+'.demo'
@@ -52,8 +54,16 @@ def seed():
             if batch==0 and not db.scalar(select(Run.id).where(Run.name=='首轮种子研究')):
                 records=[{'id':r.id,'source_id':r.source_id,'reference':r.reference,'values':r.values} for r in db.scalars(select(Record).where(Record.source_id==source.id).order_by(Record.id))]
                 run=Run(source_id=source.id,name='首轮种子研究',state='queued',parameters=CONFIG['default_parameters'],snapshot={'source':{'id':source.id,'name':source.name,'filename':source.filename},'records':records},created_at=now());db.add(run);db.flush();queued.append(run.id)
+                # 终章到达研究演示：目标章取样本中真实出现的“案例”，与一步研究独立冻结
+                if not db.scalar(select(ArrivalRun.id).where(ArrivalRun.name=='终章到达·案例复核')):
+                    from src.services import arrival_solver
+                    ap={'tolerance':arrival_solver.TOLERANCE,'stop_eps':arrival_solver.STOP_EPS,'max_iterations':arrival_solver.MAX_ITERATIONS,'batch':arrival_solver.BATCH}
+                    ar=ArrivalRun(source_id=source.id,name='终章到达·案例复核',target_chapter='案例',state='queued',parameters=ap,iterations=0,error_bound='',snapshot={'source':{'id':source.id,'name':source.name,'filename':source.filename},'records':records},created_at=now());db.add(ar);db.flush();arrival_queued.append(ar.id)
         db.commit();print(json.dumps(counts(db),ensure_ascii=False))
     for id in queued:
         try:queue.rpush('analysis:queue',id)
         except Exception:logging.exception('seed queue unavailable')
+    for id in arrival_queued:
+        try:arrival_service.queue.rpush(arrival_service.QUEUE_KEY,id)
+        except Exception:logging.exception('seed arrival queue unavailable')
 if __name__=='__main__':seed()

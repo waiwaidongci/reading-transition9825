@@ -62,6 +62,8 @@ export const domain = {
     "top_n": 20
   },
   "method_label": "会话内一阶转移计数、条件概率与相对全局基率提升",
+  "arrival_method_label": "终章到达研究：冻结一阶转移与会话末尾退出估计，分块 Jacobi 求先到目标章再退出的概率，可核验误差上界<1e-6 才收敛",
+  "arrival_tolerance": 0.000001,
   "result_headline": "一条接续关系，三个明确的分母。",
   "column_labels": {
     "reference": "样本编号",
@@ -87,6 +89,13 @@ export const domain = {
     "exhibit": "展品编号",
     "prediction": "预计评分",
     "method": "计算依据",
-    "neighbor_count": "参与邻居数"
+    "neighbor_count": "参与邻居数",
+    "chapter": "章节",
+    "hit_probability": "先到目标再退出概率",
+    "error_bound": "可核验误差上界",
+    "classification": "结构分类",
+    "in_cycle": "处于循环分量",
+    "session_end_count": "会话末章次数",
+    "exit_estimate": "退出估计 e(a)"
   }
 };
